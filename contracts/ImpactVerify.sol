@@ -2,7 +2,12 @@
 
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+
 contract AddressVoting {
+    IERC1155 private constant tokenContract = IERC1155(0xA251eb9Be4e7E2bb382268eCdd0a5fca0A962E6c);
+    uint256 private constant tokenId = 10000009;
+
     struct AddressData {
         address addr;
         bytes32 hash;
@@ -22,7 +27,12 @@ contract AddressVoting {
     event AddressApproved(bytes32 indexed hash);
     event AddressRejected(bytes32 indexed hash);
 
-    function registerAddress(address addr) external {
+    modifier onlyTokenHolders() {
+        require(tokenContract.balanceOf(msg.sender, tokenId) > 0, "Caller must hold the required token");
+        _;
+    }
+
+    function registerAddress(address addr) external onlyTokenHolders {
         bytes32 hash = keccak256(abi.encodePacked(addr));
         require(addresses[hash].hash == bytes32(0), "Address already registered");
 
@@ -40,7 +50,7 @@ contract AddressVoting {
         emit AddressRegistered(hash, addr);
     }
 
-    function vote(bytes32 hash, bool isUpvote) external {
+    function vote(bytes32 hash, bool isUpvote) external onlyTokenHolders {
         require(addresses[hash].hash != bytes32(0), "Address not registered");
         require(!addresses[hash].approved && !addresses[hash].rejected, "Address already approved or rejected");
 
