@@ -3,61 +3,98 @@
 pragma solidity ^0.8.0;
 
 contract AddressVoting {
-    struct AddressVote {
-        uint256 upvotes;
-        uint256 downvotes;
+    struct AddressData {
+        address addr;
+        bytes32 hash;
+        uint upvotes;
+        uint downvotes;
+        bool approved;
+        bool rejected;
     }
 
-    mapping(address => AddressVote) public addressVotes;
-    mapping(address => bool) public approvedAddresses;
-    mapping(address => bool) public rejectedAddresses;
-    mapping(address => bool) public registeredAddresses;
-    address[] public approved;
-    address[] public registered;
+    mapping(bytes32 => AddressData) private addresses;
+    bytes32[] private pending;
+    bytes32[] private approved;
 
-    event AddressRegistered(address indexed addr);
-    event AddressUpvoted(address indexed addr, uint256 votes);
-    event AddressDownvoted(address indexed addr, uint256 votes);
-    event AddressApproved(address indexed addr);
-    event AddressRejected(address indexed addr);
+    event AddressRegistered(bytes32 indexed hash, address addr);
+    event AddressUpvoted(bytes32 indexed hash, uint upvotes);
+    event AddressDownvoted(bytes32 indexed hash, uint downvotes);
+    event AddressApproved(bytes32 indexed hash);
+    event AddressRejected(bytes32 indexed hash);
 
-    function registerAddress() public {
-        require(!registeredAddresses[msg.sender], "Address already registered");
-        registeredAddresses[msg.sender] = true;
-        registered.push(msg.sender);
-        emit AddressRegistered(msg.sender);
+    function registerAddress(address addr) external {
+        bytes32 hash = keccak256(abi.encodePacked(addr));
+        require(addresses[hash].hash == bytes32(0), "Address already registered");
+
+        addresses[hash] = AddressData({
+            addr: addr,
+            hash: hash,
+            upvotes: 0,
+            downvotes: 0,
+            approved: false,
+            rejected: false
+        });
+
+        pending.push(hash);
+
+        emit AddressRegistered(hash, addr);
     }
 
-    function upvoteAddress(address addr) public {
-        require(registeredAddresses[msg.sender], "Address must be registered to vote");
-        require(!approvedAddresses[addr] && !rejectedAddresses[addr], "Address cannot be approved or rejected");
-        addressVotes[addr].upvotes++;
-        emit AddressUpvoted(addr, addressVotes[addr].upvotes);
-        if (addressVotes[addr].upvotes == 5) {
-            approvedAddresses[addr] = true;
-            approved.push(addr);
-            registeredAddresses[addr] = false;
-            emit AddressApproved(addr);
+    function vote(bytes32 hash, bool isUpvote) external {
+        require(addresses[hash].hash != bytes32(0), "Address not registered");
+        require(!addresses[hash].approved && !addresses[hash].rejected, "Address already approved or rejected");
+
+        if (isUpvote) {
+            addresses[hash].upvotes++;
+            emit AddressUpvoted(hash, addresses[hash].upvotes);
+            if (addresses[hash].upvotes >= 5) {
+                addresses[hash].approved = true;
+                approved.push(hash);
+                removePending(hash);
+                emit AddressApproved(hash);
+            }
+        } else {
+            addresses[hash].downvotes++;
+            emit AddressDownvoted(hash, addresses[hash].downvotes);
+            if (addresses[hash].downvotes >= 5) {
+                addresses[hash].rejected = true;
+                removePending(hash);
+                emit AddressRejected(hash);
+            }
         }
     }
 
-    function downvoteAddress(address addr) public {
-        require(registeredAddresses[msg.sender], "Address must be registered to vote");
-        require(!approvedAddresses[addr] && !rejectedAddresses[addr], "Address cannot be approved or rejected");
-        addressVotes[addr].downvotes++;
-        emit AddressDownvoted(addr, addressVotes[addr].downvotes);
-        if (addressVotes[addr].downvotes == 5) {
-            rejectedAddresses[addr] = true;
-            registeredAddresses[addr] = false;
-            emit AddressRejected(addr);
+    function isApproved(bytes32 hash) external view returns (bool) {
+        return addresses[hash].approved;
+    }
+
+    function isRejected(bytes32 hash) external view returns (bool) {
+        return addresses[hash].rejected;
+    }
+
+    function getPendingAddresses() external view returns (address[] memory) {
+        address[] memory pendingAddresses = new address[](pending.length);
+        for (uint i = 0; i < pending.length; i++) {
+            pendingAddresses[i] = addresses[pending[i]].addr;
         }
+        return pendingAddresses;
     }
 
-    function getAddresses() public view returns (address[] memory) {
-        return registered;
+    function getApprovedAddresses() external view returns (address[] memory) {
+        address[] memory approvedAddresses = new address[](approved.length);
+        for (uint i = 0; i < approved.length; i++) {
+            approvedAddresses[i] = addresses[approved[i]].addr;
+        }
+        return approvedAddresses;
     }
 
-    function getApprovedAddresses() public view returns (address[] memory) {
-        return approved;
+    function removePending(bytes32 hash) private {
+        for (uint i = 0; i < pending.length; i++) {
+            if (pending[i] == hash) {
+                pending[i] = pending[pending.length - 1];
+                pending.pop();
+                break;
+            }
+        }
     }
 }
