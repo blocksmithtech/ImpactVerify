@@ -8,6 +8,7 @@ contract AddressVoting {
     mapping(address => bool) public blacklistedAddresses;
     mapping(address => bool) public registeredAddresses;
     address[] public addresses;
+    address[] public approved;
 
     event AddressRegistered(address indexed addr);
     event AddressUpvoted(address indexed addr, uint256 votes);
@@ -29,6 +30,7 @@ contract AddressVoting {
         emit AddressUpvoted(addr, addressVotes[addr]);
         if (addressVotes[addr] == 5) {
             approvedAddresses[addr] = true;
+            approved.push(addr);
             emit AddressApproved(addr);
         }
     }
@@ -42,5 +44,13 @@ contract AddressVoting {
             blacklistedAddresses[addr] = true;
             emit AddressBlacklisted(addr);
         }
+    }
+
+    function getAddresses() public view returns (address[] memory) {
+        return addresses;
+    }
+
+    function getApprovedAddresses() public view returns (address[] memory) {
+        return approved;
     }
 }
