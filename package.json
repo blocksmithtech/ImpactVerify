@@ -8,6 +8,8 @@
     "build": "parcel build index.html"
   },
   "dependencies": {
+    "@sismo-core/zk-connect-client": "^0.0.2",
+    "@sismo-core/zk-connect-react": "^0.0.2",
     "@taikai/rocket-kit": "^3.0.0",
     "react-app-polyfill": "^1.0.0"
   },
