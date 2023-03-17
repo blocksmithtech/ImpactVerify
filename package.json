@@ -7,11 +7,19 @@
     "start": "parcel index.html",
     "build": "parcel build index.html"
   },
+  "browserslist": [
+    "last 2 Chrome versions"
+  ],
   "dependencies": {
     "@sismo-core/zk-connect-client": "^0.0.2",
     "@sismo-core/zk-connect-react": "^0.0.2",
+    "@taikai/dappkit": "^2.1.12",
     "@taikai/rocket-kit": "^3.0.0",
-    "react-app-polyfill": "^1.0.0"
+    "ethers": "^5.1.0",
+    "polished": "^4.2.2",
+    "react-app-polyfill": "^1.0.0",
+    "styled-components": "^5.3.9",
+    "web3-eth-contract": "^1.8.2"
   },
   "devDependencies": {
     "@types/react": "^16.9.11",
