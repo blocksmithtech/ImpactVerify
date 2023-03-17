@@ -118,7 +118,7 @@ const App = () => {
     }
 
     init()
-      .catch(console.error);
+      .catch(alert);
   }, []);
 
   const onchainVote = async (newValue, data) => {
@@ -206,15 +206,7 @@ const App = () => {
       <GridContainer>
         <GridRow>
           <GridCol size={4}>
-            <Tag value={'Hello'} />
-          
-            <Button
-              className="button"
-              color="purple500"
-              txtColor="white"
-              value="Connect"
-              variant="solid"
-            />
+            <marquee className="c-marquee" behavior="alternate" direction="down">regenMeUp regenMeUp regenMeUp</marquee>
           </GridCol>
           <GridCol size={4} className="is-third">
             <img src={require("./icon.png")} alt="regenMeUp" style={{ width: '100%' }} />
@@ -241,11 +233,15 @@ const App = () => {
                     dataKey: 'score',
                     renderer: (score: number, data: any) => (
                       <div className="c-increase-decrease-input">
-                        <NumberInputSpinner
-                          increment={1}
-                          onChange={(newValue) => onchainVote(newValue, data)}
-                          value={score}
-                        />
+                        {isGroupMember ? (
+                          <NumberInputSpinner
+                            increment={1}
+                            onChange={(newValue) => onchainVote(newValue, data)}
+                            value={score}
+                          />
+                        ) : (
+                          <span>{score}</span>
+                        )}
                       </div>
                     ),
                   },
@@ -254,7 +250,7 @@ const App = () => {
                     className: 'right',
                     value: 'regen Me Up',
                     dataKey: 'address',
-                    renderer: (address: string) => <Button icon="send" action={() => copyToClipboard(address)} />,
+                    renderer: (address: string) => <Button icon="send" color="darkGreen" action={() => copyToClipboard(address)} />,
                   },
                 ]
               }}
@@ -268,8 +264,7 @@ const App = () => {
                 groupId: "0x3572d27296a9718a6e5c3274f7076991"
               }}
             />
-            <h3>Is Group Member</h3>
-            <div>{ JSON.stringify(isGroupMember) }</div>
+            <marquee className="c-marquee is-flipped" behavior="alternate" direction="down">regenMeUp regenMeUp regenMeUp</marquee>
           </GridCol>
         </GridRow>
       </GridContainer>

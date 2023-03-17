@@ -24,6 +24,7 @@ const GlobalStyle = createGlobalStyle`
     color: ${normal};
     font-feature-settings: 'ss04' on;
     -webkit-font-smoothing: antialiased;
+    background: #faf8f6;
   }
 
   h1,
@@ -108,6 +109,22 @@ const GlobalStyle = createGlobalStyle`
     display: flex;
     flex-direction: column;
     align-items: flex-end;
+  }
+
+  .c-marquee {
+    writing-mode: vertical-lr;
+    height: 100%;
+    font-size: 8rem;
+    line-height: 4;
+    white-space: nowrap;
+    transform: rotate(180deg);
+    position: absolute;
+    z-index: -1;
+    color: #2b7984;
+
+    &.is-flipped {
+      transform: none;
+    }
   }
 `;
 
