@@ -20,6 +20,7 @@ contract AddressVoting {
     mapping(bytes32 => AddressData) private addresses;
     bytes32[] private pending;
     bytes32[] private approved;
+    mapping(address => mapping(bytes32 => bool)) private hasVoted;
 
     event AddressRegistered(bytes32 indexed hash, address addr);
     event AddressUpvoted(bytes32 indexed hash, uint upvotes);
@@ -52,12 +53,15 @@ contract AddressVoting {
 
     function vote(bytes32 hash, bool isUpvote) external onlyTokenHolders {
         require(addresses[hash].hash != bytes32(0), "Address not registered");
-        require(!addresses[hash].approved && !addresses[hash].rejected, "Address already approved or rejected");
+        require(!addresses[hash].rejected, "Address rejected");
+        require(!hasVoted[msg.sender][hash], "You have already voted on this address");
+
+        hasVoted[msg.sender][hash] = true;
 
         if (isUpvote) {
             addresses[hash].upvotes++;
             emit AddressUpvoted(hash, addresses[hash].upvotes);
-            if (addresses[hash].upvotes >= 5) {
+            if (addresses[hash].upvotes == 5 && !addresses[hash].approved) {
                 addresses[hash].approved = true;
                 approved.push(hash);
                 removePending(hash);
@@ -66,7 +70,7 @@ contract AddressVoting {
         } else {
             addresses[hash].downvotes++;
             emit AddressDownvoted(hash, addresses[hash].downvotes);
-            if (addresses[hash].downvotes >= 5) {
+            if (addresses[hash].downvotes == 5) {
                 addresses[hash].rejected = true;
                 removePending(hash);
                 emit AddressRejected(hash);
