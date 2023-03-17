@@ -379,25 +379,30 @@ const App = () => {
 
             <br />
             <br />
-
-            <div className="c-card">
-              <FormGroup label="Submit new RegenPunk">
-                <TextField placeholder="0x..." minimal={false} value={newRegenPunkAddress} onChange={formSaveAddress} />
-              </FormGroup>
-              <Button
-                className="button full-width"
-                color="darkGreen"
-                icon="rocket"
-                iconPosition="right"
-                txtColor="white"
-                value="Submit"
-                variant="solid"
-                action={registerNewAddress}
-              />
-            </div>
-
-            <br />
-            <br />
+            
+            {
+              isGroupMember && (<>
+                <div className="c-card">
+                  <FormGroup label="Submit new RegenPunk">
+                    <TextField placeholder="0x..." minimal={false} value={newRegenPunkAddress} onChange={formSaveAddress} />
+                  </FormGroup>
+                  <Button
+                    className="button full-width"
+                    color="darkGreen"
+                    icon="rocket"
+                    iconPosition="right"
+                    txtColor="white"
+                    value="Submit"
+                    variant="solid"
+                    action={registerNewAddress}
+                  />
+                </div>
+    
+                <br />
+                <br />
+              </>)
+            }
+            
 
             <CardValue
               label="Drip Contract Balance"
