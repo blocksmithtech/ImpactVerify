@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 contract OnchainVerifier {
     IERC1155 private constant tokenContract = IERC1155(0xA251eb9Be4e7E2bb382268eCdd0a5fca0A962E6c);
     uint256 private constant tokenId = 10000009;
+    address private contractDeployer;
 
     struct AddressData {
         address addr;
@@ -29,8 +30,16 @@ contract OnchainVerifier {
     event AddressRejected(bytes32 indexed hash);
 
     modifier onlyTokenHolders() {
-        require(tokenContract.balanceOf(msg.sender, tokenId) > 0, "Caller must hold the required token");
+        require(
+            msg.sender == contractDeployer ||
+            tokenContract.balanceOf(msg.sender, tokenId) > 0,
+            "Caller must hold the required token or be the contract deployer"
+        );
         _;
+    }
+
+    constructor() {
+        contractDeployer = msg.sender;
     }
 
     function registerAddress(address addr) external payable onlyTokenHolders {
@@ -61,7 +70,7 @@ contract OnchainVerifier {
         if (isUpvote) {
             addresses[hash].upvotes++;
             emit AddressUpvoted(hash, addresses[hash].upvotes);
-            if (addresses[hash].upvotes == 5 && !addresses[hash].approved) {
+            if (addresses[hash].upvotes == 2 && !addresses[hash].approved) {
                 addresses[hash].approved = true;
                 approved.push(hash);
                 removePending(hash);
@@ -70,7 +79,7 @@ contract OnchainVerifier {
         } else {
             addresses[hash].downvotes++;
             emit AddressDownvoted(hash, addresses[hash].downvotes);
-            if (addresses[hash].downvotes == 5) {
+            if (addresses[hash].downvotes == 2) {
                 addresses[hash].rejected = true;
                 removePending(hash);
                 emit AddressRejected(hash);
