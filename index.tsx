@@ -14,7 +14,8 @@ const config = {
   devMode: {
     enabled: true,
     devAddresses: [
-      "0x2E5deB91b444EfbeA95E34BFb9aA043A5F99f567"
+      "0x2E5deB91b444EfbeA95E34BFb9aA043A5F99f567",
+      "0x7f7dc3631a1413f8609114cc66c6afdbe24c7e33"
     ]
   }
 };
