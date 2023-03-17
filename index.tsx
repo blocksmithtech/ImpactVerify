@@ -1,8 +1,18 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Tag, Button, GridContainer, GridRow, GridCol } from '@taikai/rocket-kit';
-import { ZkConnectButton, ZkConnectResponse } from "@sismo-core/zk-connect-react";
+import { Tag, Button, GridContainer, GridRow, GridCol, Table, AvatarImage, ButtonLink, NumberInputSpinner } from '@taikai/rocket-kit';
+import GlobalStyles from './styles/globalStyles'
+import { ZkConnectButton, useZkConnect } from "@sismo-core/zk-connect-react";
 const { useEffect, useState } = React
+const config = {
+  appId: "0xa46b780f964ccf1be8e5571ced4ab0bf",
+  devMode: {
+    enabled: true,
+    devAddresses: [
+      "0x2E5deB91b444EfbeA95E34BFb9aA043A5F99f567"
+    ]
+  }
+};
 
 const App = () => {
   const [groupSnapshot, setGroupSnapshot] = useState({});
@@ -61,6 +71,17 @@ const App = () => {
     fetchData()
       .catch(console.error);
   }, []);
+
+  const { response: ZkConnectResponse } = useZkConnect({ config });
+  
+  useEffect(() => {
+    console.log('ZkConnectResponse', ZkConnectResponse)
+    if (!ZkConnectResponse) { return }
+    const { verifiableStatements } = ZkConnectResponse
+    if (verifiableStatements.findIndex((statement) => statement.groupId === "0x3572d27296a9718a6e5c3274f7076991") >= 0) {
+      setIsGroupMember(true)
+    }
+  }, [ZkConnectResponse]);
 
 
   return (
