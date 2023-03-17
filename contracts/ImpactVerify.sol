@@ -15,12 +15,12 @@ contract AddressVoting {
         uint downvotes;
         bool approved;
         bool rejected;
+        mapping(address => bool) voters;
     }
 
     mapping(bytes32 => AddressData) private addresses;
     bytes32[] private pending;
     bytes32[] private approved;
-    mapping(address => mapping(bytes32 => bool)) private hasVoted;
 
     event AddressRegistered(bytes32 indexed hash, address addr);
     event AddressUpvoted(bytes32 indexed hash, uint upvotes);
@@ -54,9 +54,7 @@ contract AddressVoting {
     function vote(bytes32 hash, bool isUpvote) external onlyTokenHolders {
         require(addresses[hash].hash != bytes32(0), "Address not registered");
         require(!addresses[hash].rejected, "Address rejected");
-        require(!hasVoted[msg.sender][hash], "You have already voted on this address");
-
-        hasVoted[msg.sender][hash] = true;
+        require(!addresses[hash].voters[msg.sender], "You have already voted on this address");
 
         if (isUpvote) {
             addresses[hash].upvotes++;
@@ -76,6 +74,7 @@ contract AddressVoting {
                 emit AddressRejected(hash);
             }
         }
+        addresses[hash].voters[msg.sender] = true;
     }
 
     function isApproved(bytes32 hash) external view returns (bool) {
@@ -86,18 +85,20 @@ contract AddressVoting {
         return addresses[hash].rejected;
     }
 
-    function getPendingAddresses() external view returns (address[] memory) {
-        address[] memory pendingAddresses = new address[](pending.length);
+    function getPendingAddresses() external view returns (addressDataTuple[] memory) {
+        addressDataTuple[] memory pendingAddresses = new addressDataTuple[](pending.length);
         for (uint i = 0; i < pending.length; i++) {
-            pendingAddresses[i] = addresses[pending[i]].addr;
+            bytes32 hash = pending[i];
+            pendingAddresses[i] = addressDataToTuple(addresses[hash]);
         }
         return pendingAddresses;
     }
 
-    function getApprovedAddresses() external view returns (address[] memory) {
-        address[] memory approvedAddresses = new address[](approved.length);
+    function getApprovedAddresses() external view returns (addressDataTuple[] memory) {
+        addressDataTuple[] memory approvedAddresses = new addressDataTuple[](approved.length);
         for (uint i = 0; i < approved.length; i++) {
-            approvedAddresses[i] = addresses[approved[i]].addr;
+            bytes32 hash = approved[i];
+            approvedAddresses[i] = addressDataToTuple(addresses[hash]);
         }
         return approvedAddresses;
     }
@@ -110,5 +111,17 @@ contract AddressVoting {
                 break;
             }
         }
+    }
+
+    struct addressDataTuple {
+        address addr;
+        uint upvotes;
+    }
+
+    function addressDataToTuple(AddressData memory data) internal pure returns (addressDataTuple memory) {
+        return addressDataTuple({
+            addr: data.addr,
+            upvotes: data.upvotes
+        });
     }
 }
