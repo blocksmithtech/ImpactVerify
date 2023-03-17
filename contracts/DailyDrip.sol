@@ -22,23 +22,30 @@ contract DailyDrip {
   Token public token;
   uint256 public amountPerDay;
   uint256 public lastDripTime;
+  address private contractDeployer;
   
   constructor(address _onchainVerifier, address _tokenAddress) {
     onchainVerifier = OnchainVerifier(_onchainVerifier);
     token = Token(_tokenAddress);
     lastDripTime = block.timestamp - 1 days;
+    contractDeployer = msg.sender;
   }
-  
+
   function drip() public payable {
     require(block.timestamp >= lastDripTime + 1 days, "Cannot drip more than once a day");
-    
+
     uint256 balance = token.balanceOf(address(this));
     amountPerDay = balance / 400; // 0.25% of the balance
     
     OnchainVerifier.addressDataTuple[] memory approvedWallets = onchainVerifier.getApprovedAddresses();
-    uint256 dripAmount = amountPerDay / approvedWallets.length;
+    
+    uint256 totalUpvotes = 0;
+    for (uint256 i = 0; i < approvedWallets.length; i++) {
+      totalUpvotes += approvedWallets[i].upvotes;
+    }
     
     for (uint256 i = 0; i < approvedWallets.length; i++) {
+      uint256 dripAmount = (amountPerDay * approvedWallets[i].upvotes) / totalUpvotes;
       require(token.transfer(approvedWallets[i].addr, dripAmount), "Token transfer failed");
     }
     
@@ -75,5 +82,18 @@ contract DailyDrip {
     uint256 dripAmount = (balance / 400) / approvedWallets.length;
     
     return dripAmount;
+  }
+
+  function updateOnchainVerifierAddress(address _newOnchainVerifier) external onlyContractDeployer {
+    onchainVerifier = OnchainVerifier(_newOnchainVerifier);
+  }
+
+  function updateTokenAddress(address _newTokenAddress) external onlyContractDeployer {
+    token = Token(_newTokenAddress);
+  }
+
+  modifier onlyContractDeployer() {
+    require(msg.sender == contractDeployer, "Caller must be the contract deployer");
+      _;
   }
 }

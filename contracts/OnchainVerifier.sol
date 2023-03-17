@@ -136,4 +136,17 @@ contract OnchainVerifier {
             upvotes: data.upvotes
         });
     }
+
+    function updateTokenContractAddress(address _newTokenContract) external onlyContractDeployer {
+        tokenContract = IERC1155(_newTokenContract);
+    }
+
+    function updateTokenId(uint256 _newTokenId) external onlyContractDeployer {
+        tokenId = _newTokenId;
+    }
+
+    modifier onlyContractDeployer() {
+        require(msg.sender == contractDeployer, "Caller must be the contract deployer");
+        _;
+    }
 }
