@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 
-contract AddressVoting {
+contract OnchainVerifier {
     IERC1155 private constant tokenContract = IERC1155(0xA251eb9Be4e7E2bb382268eCdd0a5fca0A962E6c);
     uint256 private constant tokenId = 10000009;
 
