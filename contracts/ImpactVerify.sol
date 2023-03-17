@@ -33,7 +33,7 @@ contract AddressVoting {
         _;
     }
 
-    function registerAddress(address addr) external onlyTokenHolders {
+    function registerAddress(address addr) external payable onlyTokenHolders {
         bytes32 hash = keccak256(abi.encodePacked(addr));
         require(addresses[hash].hash == bytes32(0), "Address already registered");
 
@@ -116,12 +116,14 @@ contract AddressVoting {
 
     struct addressDataTuple {
         address addr;
+        bytes32 hash;
         uint upvotes;
     }
 
     function addressDataToTuple(AddressData memory data) internal pure returns (addressDataTuple memory) {
         return addressDataTuple({
             addr: data.addr,
+            hash: data.hash,
             upvotes: data.upvotes
         });
     }
