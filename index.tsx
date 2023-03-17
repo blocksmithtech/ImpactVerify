@@ -422,6 +422,7 @@ const App = () => {
                 groupId: "0x3572d27296a9718a6e5c3274f7076991"
               }}
             />
+            <p className="sismo-note">Connect via Sismo to vote and register new addresses.</p>
             <marquee className="c-marquee is-flipped" behavior="alternate" direction="down">regenMeUp regenMeUp regenMeUp</marquee>
           </GridCol>
         </GridRow>

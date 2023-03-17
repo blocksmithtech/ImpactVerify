@@ -150,6 +150,15 @@ const GlobalStyle = createGlobalStyle`
   .full-width {
     width: 100%;
   }
+
+  .zkConnectButton {
+    margin: 1rem;
+  }
+  .sismo-note {
+    text-align: right;
+    width: 10rem;
+    margin-right: 1.2rem;
+  }
 `;
 
 export default GlobalStyle;
