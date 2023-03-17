@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Tag, Button, GridContainer, GridRow, GridCol, Table, AvatarImage, ButtonLink, NumberInputSpinner, FormGroup, TextField, CardValue } from '@taikai/rocket-kit';
+import { Button, GridContainer, GridRow, GridCol, Table, AvatarImage, NumberInputSpinner, FormGroup, TextField, CardValue } from '@taikai/rocket-kit';
 import GlobalStyles from './styles/globalStyles'
 import { ZkConnectButton, useZkConnect } from "@sismo-core/zk-connect-react";
 const { useEffect, useState, useCallback } = React
@@ -8,6 +8,7 @@ import { Web3Connection } from '@taikai/dappkit';
 import { OnchainVerifier, DailyDrip } from './models/contracts';
 import { utils } from 'ethers';
 const { getAddress, formatEther } = utils;
+import { OnchainVerifierData, DailyDripData } from './models/abi'
 
 const config = {
   appId: "0xa46b780f964ccf1be8e5571ced4ab0bf",
@@ -19,182 +20,6 @@ const config = {
     ]
   }
 };
-
-const address = "0xb6E528Ec53E59c3592810645C6C5C869A9587Eb3";
-const abi = [
-  {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "addr",
-        "type": "address"
-      }
-    ],
-    "name": "registerAddress",
-    "outputs": [],
-    "stateMutability": "payable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "hash",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "bool",
-        "name": "isUpvote",
-        "type": "bool"
-      }
-    ],
-    "name": "vote",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getApprovedAddresses",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "addr",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "hash",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "uint256",
-            "name": "upvotes",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct OnchainVerifier.addressDataTuple[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getPendingAddresses",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "address",
-            "name": "addr",
-            "type": "address"
-          },
-          {
-            "internalType": "bytes32",
-            "name": "hash",
-            "type": "bytes32"
-          },
-          {
-            "internalType": "uint256",
-            "name": "upvotes",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct OnchainVerifier.addressDataTuple[]",
-        "name": "",
-        "type": "tuple[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "hash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "isApproved",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "hash",
-        "type": "bytes32"
-      }
-    ],
-    "name": "isRejected",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-]
-
-const dripAddress = "0x9022541C658911E3C58d63e588E10c8CD2576BFd"
-const dripABI = [
-  {
-    "inputs": [],
-    "name": "getBalance",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getDripAmount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "lastDripTime",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  }
-]
 
 const isValidAddress = (address) => {
   try {
@@ -210,16 +35,16 @@ const App = () => {
   const [isGroupMember, setIsGroupMember] = useState(false);
   const [newRegenPunkAddress, setNewRegenPunkAddress] = useState("");
 
-  const [dripBalance, setDripBalance] = useState(0);
-  const [dripAmount, setDripAmount] = useState(0);
+  const [dripBalance, setDripBalance] = useState('');
+  const [dripAmount, setDripAmount] = useState('');
   const [lastDrip, setLastDrip] = useState(new Date());
 
   const web3Connection = new Web3Connection({ web3Host: "https://goerli.infura.io/v3/d841459c0fca4e8aad16020ddf86f7f7" });
   const [OnchainVerifierContract, setOnchainVerifierContract] = useState(
     new OnchainVerifier(
       web3Connection,
-      abi,
-      address
+      OnchainVerifierData.abi,
+      OnchainVerifierData.address
     )
   );
 
@@ -233,14 +58,14 @@ const App = () => {
 
       const dripContract = new DailyDrip(
         web3Connection,
-        dripABI,
-        dripAddress
+        DailyDripData.abi,
+        DailyDripData.address
       )
       await dripContract.start();
       const balance = await dripContract.getBalance();
-      setDripBalance(formatEther(balance))
+      setDripBalance(formatEther(balance).toString())
       const dripAmount = await dripContract.getDripAmount();
-      setDripAmount(formatEther(dripAmount))
+      setDripAmount(formatEther(dripAmount).toString())
       const lastDripTime = await dripContract.lastDripTime();
       setLastDrip(new Date(lastDripTime*1000))
     }
@@ -250,13 +75,12 @@ const App = () => {
   }, []);
 
   const updateAddresses = useCallback(async () => {
-    // TODO: get ens
     const pendingAddressesResponse = await OnchainVerifierContract.getPendingAddresses();
     const pendingAddresses = pendingAddressesResponse.reduce((acc, cur) => {
       acc.push({
         id: cur.hash,
         address: cur.addr,
-        score: parseInt(cur.upvotes)
+        upvotes: parseInt(cur.upvotes)
       });
       return acc;
     }, []);
@@ -266,13 +90,12 @@ const App = () => {
       acc.push({
         id: cur.hash,
         address: cur.addr,
-        score: parseInt(cur.upvotes)
+        upvotes: parseInt(cur.upvotes)
       });
       return acc;
     }, pendingAddresses);
 
-    const sortedAddresses = approvedAddresses.sort((a, b) => b.score - a.score)
-    // sort
+    const sortedAddresses = approvedAddresses.sort((a, b) => b.upvotes - a.upvotes)
 
     console.log(sortedAddresses);
     setGroupMembers(sortedAddresses);
@@ -281,11 +104,11 @@ const App = () => {
   const onchainVote = useCallback(async (newValue, data) => {
     await updateAddresses();
     try {
-      const { score, id } = data;
+      const { upvotes, id } = data;
     
       const response = await OnchainVerifierContract.vote(
         id,
-        newValue > score // isUpvote
+        newValue > upvotes // isUpvote
       );
       console.log(response)
     } catch (error) {
@@ -356,19 +179,19 @@ const App = () => {
                   },
                   {
                     className: 'right',
-                    id: 'score',
-                    value: 'Score',
-                    dataKey: 'score',
-                    renderer: (score: number, data: any) => (
+                    id: 'upvotes',
+                    value: 'UpVotes',
+                    dataKey: 'upvotes',
+                    renderer: (upvotes: number, data: any) => (
                       <div className="c-increase-decrease-input">
                         {isGroupMember ? (
                           <NumberInputSpinner
                             increment={1}
                             onChange={(newValue) => onchainVote(newValue, data)}
-                            value={groupMembers.find(m => m.id === data.id).score}
+                            value={groupMembers.find(m => m.id === data.id).upvotes}
                           />
                         ) : (
-                          <span>{score}</span>
+                          <span>{upvotes}</span>
                         )}
                       </div>
                     ),
@@ -411,7 +234,7 @@ const App = () => {
             />
             <br/>
             <p>{`Last Drip: ${lastDrip.toLocaleString()}`}</p>
-            <p>{`Drip Amount: ${dripAmount} BCT`}</p>
+            <p>{`Drip Amount: ${dripAmount} BCT per vote`}</p>
 
             <br />
             <br />

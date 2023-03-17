@@ -79,7 +79,11 @@ contract DailyDrip {
   function getDripAmount() public view returns (uint256) {
     uint256 balance = token.balanceOf(address(this));
     OnchainVerifier.addressDataTuple[] memory approvedWallets = onchainVerifier.getApprovedAddresses();
-    uint256 dripAmount = (balance / 400) / approvedWallets.length;
+    uint256 totalUpvotes = 0;
+    for (uint256 i = 0; i < approvedWallets.length; i++) {
+      totalUpvotes += approvedWallets[i].upvotes;
+    }
+    uint256 dripAmount = (balance / 400) / totalUpvotes;
     
     return dripAmount;
   }
