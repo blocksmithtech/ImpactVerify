@@ -62,12 +62,18 @@ const App = () => {
         DailyDripData.address
       )
       await dripContract.start();
-      const balance = await dripContract.getBalance();
+      try {
+        const balance = await dripContract.getBalance();
       setDripBalance(formatEther(balance).toString())
-      const dripAmount = await dripContract.getDripAmount();
+      } catch {}
+      try {
+        const dripAmount = await dripContract.getDripAmount();
       setDripAmount(formatEther(dripAmount).toString())
-      const lastDripTime = await dripContract.lastDripTime();
-      setLastDrip(new Date(lastDripTime*1000))
+      } catch {}
+      try {
+        const lastDripTime = await dripContract.lastDripTime();
+        setLastDrip(new Date(lastDripTime*1000))
+      } catch {}
     }
 
     init()

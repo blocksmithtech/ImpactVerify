@@ -1,6 +1,6 @@
 // OnchainVerifier
 export const OnchainVerifierData = {
-  address: "0xb6E528Ec53E59c3592810645C6C5C869A9587Eb3",
+  address: "0x9e806499d37c7fFFfA481d209D3c066008977Caa",
   abi: [
     {
       "inputs": [
@@ -136,7 +136,7 @@ export const OnchainVerifierData = {
 
 // DailyDrip
 export const DailyDripData = {
-  address: "0x9022541C658911E3C58d63e588E10c8CD2576BFd",
+  address: "0x3E159B4eFDa38D27286400Fe938ee49da0335Ba5",
   abi: [
     {
       "inputs": [],
