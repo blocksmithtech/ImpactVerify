@@ -1,14 +1,13 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
-import { Tag, Button, GridContainer, GridRow, GridCol, Table, AvatarImage, ButtonLink, NumberInputSpinner } from '@taikai/rocket-kit';
+import { Tag, Button, GridContainer, GridRow, GridCol, Table, AvatarImage, ButtonLink, NumberInputSpinner, FormGroup, TextField, CardValue } from '@taikai/rocket-kit';
 import GlobalStyles from './styles/globalStyles'
 import { ZkConnectButton, useZkConnect } from "@sismo-core/zk-connect-react";
-const { useEffect, useState } = React
+const { useEffect, useState, useCallback } = React
 import { Web3Connection } from '@taikai/dappkit';
-import { OnchainVerifier } from './models/OnchainVerifier';
+import { OnchainVerifier, DailyDrip } from './models/contracts';
 import { utils } from 'ethers';
-const { keccak256, defaultAbiCoder } = utils;
-import styled from 'styled-components';
+const { getAddress, formatEther } = utils;
 
 const config = {
   appId: "0xa46b780f964ccf1be8e5571ced4ab0bf",
@@ -20,34 +19,8 @@ const config = {
   }
 };
 
-const address = "0x31429d1856aD1377A8A0079410B297e1a9e214c2";
+const address = "0xb6E528Ec53E59c3592810645C6C5C869A9587Eb3";
 const abi = [
-  {
-    "inputs": [],
-    "name": "getApprovedAddresses",
-    "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "getPendingAddresses",
-    "outputs": [
-      {
-        "internalType": "address[]",
-        "name": "",
-        "type": "address[]"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
   {
     "inputs": [
       {
@@ -58,7 +31,7 @@ const abi = [
     ],
     "name": "registerAddress",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -78,115 +51,248 @@ const abi = [
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getApprovedAddresses",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "addr",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "hash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "upvotes",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OnchainVerifier.addressDataTuple[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getPendingAddresses",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "addr",
+            "type": "address"
+          },
+          {
+            "internalType": "bytes32",
+            "name": "hash",
+            "type": "bytes32"
+          },
+          {
+            "internalType": "uint256",
+            "name": "upvotes",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct OnchainVerifier.addressDataTuple[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "hash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "isApproved",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "hash",
+        "type": "bytes32"
+      }
+    ],
+    "name": "isRejected",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
 
-const copyToClipboard = async (address) => {
+const dripAddress = "0x9022541C658911E3C58d63e588E10c8CD2576BFd"
+const dripABI = [
+  {
+    "inputs": [],
+    "name": "getBalance",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getDripAmount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "lastDripTime",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
+
+const isValidAddress = (address) => {
   try {
-    await navigator.clipboard.writeText(address);
-    alert("Address copied to clipboard. Send them some ETH!")
-  } catch (err) {
-    console.error('Failed to copy: ', err);
+    getAddress(address);
+    return true;
+  } catch {
+    return false;
   }
 }
 
 const App = () => {
-  const [groupSnapshot, setGroupSnapshot] = useState({});
   const [groupMembers, setGroupMembers] = useState<any[]>([]);
   const [isGroupMember, setIsGroupMember] = useState(false);
+  const [newRegenPunkAddress, setNewRegenPunkAddress] = useState("");
+
+  const [dripBalance, setDripBalance] = useState(0);
+  const [dripAmount, setDripAmount] = useState(0);
+  const [lastDrip, setLastDrip] = useState(new Date());
 
   const web3Connection = new Web3Connection({ web3Host: "https://goerli.infura.io/v3/d841459c0fca4e8aad16020ddf86f7f7" });
-  let OnchainVerifierContract;
+  const [OnchainVerifierContract, setOnchainVerifierContract] = useState(
+    new OnchainVerifier(
+      web3Connection,
+      abi,
+      address
+    )
+  );
 
   useEffect(() => {
     const init = async () => {
       await web3Connection.start();
       await web3Connection.connect();
 
-      OnchainVerifierContract = new OnchainVerifier(
-        web3Connection,
-        abi,
-        address
-      );
       await OnchainVerifierContract.start();
-      // console.log(await OnchainVerifierContract.getPendingAddresses());
-      setGroupMembers([
-        { id: 1, address: "0x2E5deB91b444EfbeA95E34BFb9aA043A5F99f567", score: 2 },
-        { id: 2, address: "0x7f7dc3631a1413f8609114cc66c6afdbe24c7e33", score: 3 },
-        { id: 3, address: "0x5B92aBcbC35B574e41e3D237d741aCFF61297D2e", score: 1 }
-      ])
+      await updateAddresses();
+
+      const dripContract = new DailyDrip(
+        web3Connection,
+        dripABI,
+        dripAddress
+      )
+      await dripContract.start();
+      const balance = await dripContract.getBalance();
+      setDripBalance(formatEther(balance))
+      const dripAmount = await dripContract.getDripAmount();
+      setDripAmount(formatEther(dripAmount))
+      const lastDripTime = await dripContract.lastDripTime();
+      setLastDrip(new Date(lastDripTime*1000))
     }
 
     init()
       .catch(alert);
   }, []);
 
-  const onchainVote = async (newValue, data) => {
-    const { score, address } = data
+  const updateAddresses = useCallback(async () => {
+    // TODO: get ens
+    const pendingAddressesResponse = await OnchainVerifierContract.getPendingAddresses();
+    const pendingAddresses = pendingAddressesResponse.reduce((acc, cur) => {
+      acc.push({
+        id: cur.hash,
+        address: cur.addr,
+        score: parseInt(cur.upvotes)
+      });
+      return acc;
+    }, []);
 
-    const encodedAddress = defaultAbiCoder.encode(['address'], [address]);
-    const hashedAddress = keccak256(encodedAddress);
+    const approvedAddressesResponse = await OnchainVerifierContract.getApprovedAddresses();
+    const approvedAddresses = approvedAddressesResponse.reduce((acc, cur) => {
+      acc.push({
+        id: cur.hash,
+        address: cur.addr,
+        score: parseInt(cur.upvotes)
+      });
+      return acc;
+    }, pendingAddresses);
+
+    const sortedAddresses = approvedAddresses.sort((a, b) => b.score - a.score)
+    // sort
+
+    console.log(sortedAddresses);
+    setGroupMembers(sortedAddresses);
+  }, [groupMembers]);
+
+  const onchainVote = useCallback(async (newValue, data) => {
+    await updateAddresses();
+    try {
+      const { score, id } = data;
     
-    await OnchainVerifierContract.vote(
-      hashedAddress,
-      newValue > score // isUpvote
-    )
-  }
-  
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     const { dataUrl } = await fetchGroupSnapshot()
-  //     console.log(dataUrl)
-  //     await fetchGroupMembers(dataUrl)
-  //   }
-  //   const fetchGroupSnapshot = async () => {
-  //     const query = `
-  //       query getSnapshot {
-  //         groupSnapshot(
-  //           groupId: "0x3572d27296a9718a6e5c3274f7076991",
-  //         ) {
-  //           id
-  //           dataUrl
-  //           size
-  //           timestamp
-  //           valueDistribution {
-  //             numberOfAccounts
-  //             value
-  //           }
-  //         }
-  //       }
-  //     `
-
-  //     const res = await fetch('https://api.sismo.io', {
-  //       method: 'POST',
-  //       headers: {
-  //         'Content-Type': 'application/json',
-  //         'Accept': 'application/json',
-  //       },
-  //       body: JSON.stringify({ query})
-  //     });
-  //     const { data, errors } = await res.json();
-  //     console.log(data)
-  //     setGroupSnapshot(data.groupSnapshot)
-  //     return data.groupSnapshot
-  //   }
-
-  //   const fetchGroupMembers = async (dataUrl) => {
-  //     const res = await fetch(dataUrl, {
-  //       method: 'GET',
-  //       headers: {
-  //         'Accept': 'application/json',
-  //       }
-  //     });
-  //     const data = JSON.parse(await res.text());
-  //     console.log(data)
-  //     setGroupMembers(data)
-  //   }
-
-  //   fetchData()
-  //     .catch(console.error);
-  // }, []);
+      const response = await OnchainVerifierContract.vote(
+        id,
+        newValue > score // isUpvote
+      );
+      console.log(response)
+    } catch (error) {
+      console.log(error);
+      alert(error.message);
+    }
+    await updateAddresses();
+  }, [groupMembers]);
 
   const { response: ZkConnectResponse } = useZkConnect({ config });
   
@@ -198,6 +304,26 @@ const App = () => {
       setIsGroupMember(true)
     }
   }, [ZkConnectResponse]);
+
+  const formSaveAddress = useCallback((event) => {
+    console.log(event.target.value)
+    setNewRegenPunkAddress(event.target.value)
+  }, [newRegenPunkAddress]);
+
+  const registerNewAddress = useCallback(async () => {
+    if (!isValidAddress(newRegenPunkAddress)) {
+      return alert("Please add a valid address");
+    }
+    try {
+      const response = await OnchainVerifierContract.registerAddress(newRegenPunkAddress);
+      console.log(response);
+    } catch (error) {
+      console.log(error);
+      alert(error.message);
+    }
+    setNewRegenPunkAddress("");
+    await updateAddresses();
+  }, [newRegenPunkAddress, groupMembers])
 
 
   return (
@@ -228,6 +354,7 @@ const App = () => {
                     value: 'Address'
                   },
                   {
+                    className: 'right',
                     id: 'score',
                     value: 'Score',
                     dataKey: 'score',
@@ -237,25 +364,51 @@ const App = () => {
                           <NumberInputSpinner
                             increment={1}
                             onChange={(newValue) => onchainVote(newValue, data)}
-                            value={score}
+                            value={groupMembers.find(m => m.id === data.id).score}
                           />
                         ) : (
                           <span>{score}</span>
                         )}
                       </div>
                     ),
-                  },
-                  {
-                    id: 'goTo',
-                    className: 'right',
-                    value: 'regen Me Up',
-                    dataKey: 'address',
-                    renderer: (address: string) => <Button icon="send" color="darkGreen" action={() => copyToClipboard(address)} />,
-                  },
+                  }
                 ]
               }}
               values={groupMembers}
             />
+
+            <br />
+            <br />
+
+            <div className="c-card">
+              <FormGroup label="Submit new RegenPunk">
+                <TextField placeholder="0x..." minimal={false} value={newRegenPunkAddress} onChange={formSaveAddress} />
+              </FormGroup>
+              <Button
+                className="button full-width"
+                color="darkGreen"
+                icon="rocket"
+                iconPosition="right"
+                txtColor="white"
+                value="Submit"
+                variant="solid"
+                action={registerNewAddress}
+              />
+            </div>
+
+            <br />
+            <br />
+
+            <CardValue
+              label="Drip Contract Balance"
+              value={`${dripBalance} BCT`}
+            />
+            <br/>
+            <p>{`Last Drip: ${lastDrip.toLocaleString()}`}</p>
+            <p>{`Drip Amount: ${dripAmount} BCT`}</p>
+
+            <br />
+            <br />
           </GridCol>
           <GridCol size={4} className="col-right">
             <ZkConnectButton 

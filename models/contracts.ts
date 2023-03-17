@@ -33,3 +33,29 @@ export interface OnchainVerifierMethods {
   registerAddress(address: string) :ContractSendMethod;
   vote(hash: string, isUpvote: boolean) :ContractSendMethod;
 }
+
+export class DailyDrip extends Model<DailyDripMethods> {
+  constructor(web3Connection: Web3Connection|Web3ConnectionOptions,
+              readonly abi: any,
+              readonly contractAddress: string) {
+    super(web3Connection, abi, contractAddress);
+  }
+
+  async getBalance() {
+    return this.callTx(this.contract.methods.getBalance());
+  }
+
+  async getDripAmount() {
+    return this.callTx(this.contract.methods.getDripAmount());
+  }
+
+  async lastDripTime() {
+    return this.callTx(this.contract.methods.lastDripTime());
+  }
+}
+
+export interface DailyDripMethods {
+  getBalance() :ContractCallMethod<any>;
+  getDripAmount() :ContractCallMethod<any>;
+  lastDripTime() :ContractCallMethod<any>;
+}

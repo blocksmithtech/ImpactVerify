@@ -25,6 +25,7 @@ const GlobalStyle = createGlobalStyle`
     font-feature-settings: 'ss04' on;
     -webkit-font-smoothing: antialiased;
     background: #faf8f6;
+    position: relative;
   }
 
   h1,
@@ -99,9 +100,15 @@ const GlobalStyle = createGlobalStyle`
   .c-increase-decrease-input div {
     height: 2rem;
 
-    button, input {
+
+    button {
       height: 2rem;
       width: 2rem;
+    }
+    input {
+      height: 2rem;
+      padding-left: 0;
+      padding-right: 0;
     }
   }
 
@@ -125,6 +132,23 @@ const GlobalStyle = createGlobalStyle`
     &.is-flipped {
       transform: none;
     }
+  }
+
+  .c-card {
+    border: 0.0625rem solid #939393;
+    border-radius: 0.375rem;
+    background-color: #ffffff;
+    padding: 1rem;
+    & > div {
+      width: 100%;
+    }
+
+    input {
+      width: 100%;
+    }
+  }
+  .full-width {
+    width: 100%;
   }
 `;
 
