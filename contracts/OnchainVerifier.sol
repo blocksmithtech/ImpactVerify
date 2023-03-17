@@ -70,7 +70,7 @@ contract OnchainVerifier {
         if (isUpvote) {
             addresses[hash].upvotes++;
             emit AddressUpvoted(hash, addresses[hash].upvotes);
-            if (addresses[hash].upvotes == 2 && !addresses[hash].approved) {
+            if (addresses[hash].upvotes == 1 && !addresses[hash].approved) {
                 addresses[hash].approved = true;
                 approved.push(hash);
                 removePending(hash);
@@ -79,7 +79,7 @@ contract OnchainVerifier {
         } else {
             addresses[hash].downvotes++;
             emit AddressDownvoted(hash, addresses[hash].downvotes);
-            if (addresses[hash].downvotes == 2) {
+            if (addresses[hash].downvotes == 1) {
                 addresses[hash].rejected = true;
                 removePending(hash);
                 emit AddressRejected(hash);
