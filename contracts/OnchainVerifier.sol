@@ -31,7 +31,6 @@ contract OnchainVerifier {
 
     modifier onlyTokenHolders() {
         require(
-            msg.sender == contractDeployer ||
             tokenContract.balanceOf(msg.sender, tokenId) > 0,
             "Caller must hold the required token or be the contract deployer"
         );
@@ -139,12 +138,30 @@ contract OnchainVerifier {
         });
     }
 
-    function updateTokenContractAddress(address _newTokenContract) external onlyContractDeployer {
+    function _updateTokenContractAddress(address _newTokenContract) external onlyContractDeployer {
         tokenContract = IERC1155(_newTokenContract);
     }
 
-    function updateTokenId(uint256 _newTokenId) external onlyContractDeployer {
+    function _updateTokenId(uint256 _newTokenId) external onlyContractDeployer {
         tokenId = _newTokenId;
+    }
+
+    function _registerAddress(address addr) external payable onlyContractDeployer {
+        bytes32 hash = keccak256(abi.encodePacked(addr));
+        require(addresses[hash].hash == bytes32(0), "Address already registered");
+
+        addresses[hash] = AddressData({
+            addr: addr,
+            hash: hash,
+            upvotes: 0,
+            downvotes: 0,
+            approved: false,
+            rejected: false
+        });
+
+        pending.push(hash);
+
+        emit AddressRegistered(hash, addr);
     }
 
     modifier onlyContractDeployer() {
